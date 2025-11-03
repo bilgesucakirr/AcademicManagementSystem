@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Review.Domain.Entities;
 using System.Reflection;
+using Review.Application.Contracts;
 
 namespace Review.Infrastructure.Persistence;
 
-public class ReviewDbContext : DbContext
+public class ReviewDbContext : DbContext, IApplicationDbContext
 {
     
     public ReviewDbContext(DbContextOptions<ReviewDbContext> options) : base(options) { }

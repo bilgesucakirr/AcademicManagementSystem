@@ -1,13 +1,21 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Review.Infrastructure.Persistence;
+using Review.Application.Contracts;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<ReviewDbContext>(options =>
+builder.Services.AddDbContext<IApplicationDbContext, ReviewDbContext>(options =>
     options.UseSqlServer(connectionString,
         b => b.MigrationsAssembly(typeof(ReviewDbContext).Assembly.FullName)));
+
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(Review.Application.IAssemblyMarker).Assembly));
+
+builder.Services.AddValidatorsFromAssembly(typeof(Review.Application.IAssemblyMarker).Assembly);
 
 // Add services to the container.
 

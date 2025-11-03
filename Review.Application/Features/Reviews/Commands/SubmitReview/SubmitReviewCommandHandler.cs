@@ -1,21 +1,21 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Review.Infrastructure.Persistence;
+using Review.Application.Contracts; 
 
 namespace Review.Application.Features.Reviews.Commands.SubmitReview;
 
 public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, Unit>
 {
-    private readonly ReviewDbContext _context;
+    private readonly IApplicationDbContext _context;
 
-    // DbContext'i constructor injection ile alıyoruz.
-    public SubmitReviewCommandHandler(ReviewDbContext context)
+    public SubmitReviewCommandHandler(IApplicationDbContext context) 
     {
         _context = context;
     }
 
     public async Task<Unit> Handle(SubmitReviewCommand request, CancellationToken cancellationToken)
     {
+        
         var assignment = await _context.ReviewAssignments
             .FirstOrDefaultAsync(ra => ra.Id == request.AssignmentId, cancellationToken);
 
