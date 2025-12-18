@@ -2,10 +2,10 @@
 
 public enum SubmissionStatus
 {
-    Draft,              // Yazar hala düzenliyor
-    Submitted,          // Gönderildi, Editör bekliyor
-    UnderReview,        // Hakemlerde
-    RevisionRequired,   // Yazar düzeltme yapmalı
+    Draft,              
+    Submitted,          
+    UnderReview,       
+    RevisionRequired,   
     Accepted,
     Rejected
 }

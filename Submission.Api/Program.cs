@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Submission.Application.Features.Submissions.Commands.CreateSubmission;
 using Submission.Infrastructure.Persistence; // <-- BU LAZIM
 using System.Text;
 
@@ -43,6 +44,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = false
     };
 });
+
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateSubmissionCommand).Assembly));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Submission.Application.Contracts.IFileService, Submission.Api.Services.FileService>();
