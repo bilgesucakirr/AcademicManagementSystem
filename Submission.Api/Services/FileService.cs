@@ -15,8 +15,16 @@ public class FileService : IFileService
 
     public async Task<string> SaveFileAsync(IFormFile file)
     {
-        var folder = Path.Combine(_env.WebRootPath, "uploads", "submissions");
-        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+        // DÜZELTME BURADA:
+        // Eğer WebRootPath null ise (klasör yoksa), ContentRootPath (proje ana dizini) + "wwwroot" kullan.
+        string webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+
+        var folder = Path.Combine(webRootPath, "uploads", "submissions");
+
+        if (!Directory.Exists(folder))
+        {
+            Directory.CreateDirectory(folder);
+        }
 
         var fileName = $"{Guid.NewGuid()}_{file.FileName}";
         var path = Path.Combine(folder, fileName);

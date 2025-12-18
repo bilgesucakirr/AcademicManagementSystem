@@ -12,7 +12,7 @@ using Submission.Infrastructure.Persistence;
 namespace Submission.Infrastructure.Migrations
 {
     [DbContext(typeof(SubmissionDbContext))]
-    [Migration("20251217221918_InitialCreate")]
+    [Migration("20251218020943_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -85,6 +85,9 @@ namespace Submission.Infrastructure.Migrations
 
                     b.Property<string>("ConflictDetails")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Context")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");

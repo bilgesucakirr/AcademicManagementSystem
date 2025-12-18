@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Submission.Application.Contracts;
 using Submission.Application.Features.Submissions.Commands.CreateSubmission;
-using Submission.Infrastructure.Persistence; // <-- BU LAZIM
+using Submission.Infrastructure.Persistence;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,13 +15,15 @@ builder.Services.AddDbContext<SubmissionDbContext>(options =>
     options.UseSqlServer(connectionString,
         b => b.MigrationsAssembly(typeof(SubmissionDbContext).Assembly.FullName)));
 
+builder.Services.AddScoped<ISubmissionDbContext>(provider =>
+    provider.GetRequiredService<SubmissionDbContext>());
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorUI",
         policy =>
         {
-            policy.WithOrigins("https://localhost:7018") // UI Portu
+            policy.WithOrigins("https://localhost:7018")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
@@ -48,10 +52,34 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateSubmissionCommand).Assembly));
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<Submission.Application.Contracts.IFileService, Submission.Api.Services.FileService>();
+builder.Services.AddScoped<IFileService, Submission.Api.Services.FileService>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Submission.Api", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please insert JWT with Bearer into field",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+    {
+        new OpenApiSecurityScheme
+        {
+            Reference = new OpenApiReference
+            {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        new string[] { }
+    }});
+});
 
 var app = builder.Build();
 
@@ -64,8 +92,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-       
-        Console.WriteLine("Veritaban? olu?turulurken hata: " + ex.Message);
+        Console.WriteLine(ex.Message);
     }
 }
 

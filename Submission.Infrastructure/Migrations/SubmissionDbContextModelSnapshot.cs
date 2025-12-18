@@ -83,6 +83,9 @@ namespace Submission.Infrastructure.Migrations
                     b.Property<string>("ConflictDetails")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Context")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
