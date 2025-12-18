@@ -11,6 +11,7 @@ public class Review
     public string? AttachmentUrl { get; private set; }
     public DateTime SubmittedAt { get; private set; }
 
+
     public ReviewAssignment Assignment { get; private set; } = null!;
 
     private Review() { }
@@ -20,7 +21,8 @@ public class Review
         decimal overallScore,
         int confidence,
         string commentsToAuthor,
-        string? commentsToEditor)
+        string? commentsToEditor,
+        string? attachmentUrl)
     {
         
         if (overallScore < 1 || overallScore > 5)
@@ -33,6 +35,7 @@ public class Review
         Confidence = confidence;
         CommentsToAuthor = commentsToAuthor;
         CommentsToEditor = commentsToEditor;
+    AttachmentUrl = attachmentUrl;
         SubmittedAt = DateTime.UtcNow;
     }
 }

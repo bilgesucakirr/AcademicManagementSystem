@@ -1,10 +1,11 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Review.Infrastructure.Persistence;
+using Review.Api.Services;
 using Review.Application.Contracts;
-
+using Review.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+const string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -17,16 +18,29 @@ builder.Services.AddMediatR(cfg =>
 
 builder.Services.AddValidatorsFromAssembly(typeof(Review.Application.IAssemblyMarker).Assembly);
 
-// Add services to the container.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          // BURASI ÇOK ÖNEMLİ: UI Projenin çalıştığı port (7018) olmalı
+                          policy.WithOrigins("https://localhost:7018")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IFileService, FileService>();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseMiddleware<Review.Api.Middleware.ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -34,9 +48,27 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ReviewDbContext>();
+        await SeedData.InitializeDatabaseAsync(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Veritabanı seed işlemi sırasında bir hata oluştu.");
+    }
+}
 
 app.Run();
