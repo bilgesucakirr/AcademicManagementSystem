@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Submission.Application.Features.Submissions.Commands.CreateSubmission;
+using Submission.Application.Features.Submissions.Commands.RecordDecision;
 using Submission.Application.Features.Submissions.Queries.GetMySubmissions;
-using System.Security.Claims;
 using Submission.Application.Features.Submissions.Queries.GetSubmissionsList;
+using System.Security.Claims;
 
 namespace Submission.Api.Controllers;
 
@@ -69,5 +70,14 @@ public class SubmissionsController : ControllerBase
         var result = await _mediator.Send(query);
 
         return Ok(result);
+    }
+
+    [HttpPost("{id}/decision")]
+    [Authorize(Roles = "Admin,EditorInChief,TrackChair")]
+    public async Task<IActionResult> RecordDecision(Guid id, [FromBody] RecordDecisionCommand command)
+    {
+        command.SubmissionId = id;
+        await _mediator.Send(command);
+        return Ok(new { Message = "Decision recorded and author notified." });
     }
 }

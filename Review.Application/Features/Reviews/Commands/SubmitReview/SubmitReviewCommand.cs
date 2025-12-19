@@ -10,5 +10,6 @@ public record SubmitReviewCommand : IRequest<Unit>
     public int Confidence { get; set; }
     public string CommentsToAuthor { get; set; } = string.Empty;
     public string? CommentsToEditor { get; set; }
+    public string Recommendation { get; set; } = string.Empty; // Accept, Reject, etc.
     public IFormFile? ReviewFile { get; set; }
 }

@@ -2,10 +2,11 @@
 
 public enum SubmissionStatus
 {
-    Draft,              
-    Submitted,          
-    UnderReview,       
-    RevisionRequired,   
+    Draft,
+    Submitted,
+    UnderReview,
+    RevisionRequested,
     Accepted,
-    Rejected
+    Rejected,
+    Withdrawn
 }

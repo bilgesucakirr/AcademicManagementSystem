@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Review.Application.Contracts; // IApplicationDbContext ve IFileService için
+using Review.Application.Contracts;
 using Review.Domain.Enums;
 
 namespace Review.Application.Features.Reviews.Commands.SubmitReview;
@@ -8,9 +8,8 @@ namespace Review.Application.Features.Reviews.Commands.SubmitReview;
 public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
-    private readonly IFileService _fileService; // DOSYA SERVİSİ İÇİN ARAYÜZ
+    private readonly IFileService _fileService;
 
-    // CONSTRUCTOR GÜNCELLEMESİ: Artık IFileService'i de enjekte ediyoruz.
     public SubmitReviewCommandHandler(IApplicationDbContext context, IFileService fileService)
     {
         _context = context;
@@ -19,49 +18,37 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
 
     public async Task<Unit> Handle(SubmitReviewCommand request, CancellationToken cancellationToken)
     {
-        // 1. İlgili hakem atamasını veritabanında bul (Bu kısım aynı).
         var assignment = await _context.ReviewAssignments
             .FirstOrDefaultAsync(ra => ra.Id == request.AssignmentId, cancellationToken);
 
         if (assignment is null)
-        {
-            throw new KeyNotFoundException($"Assignment with ID {request.AssignmentId} not found.");
-        }
+            throw new KeyNotFoundException($"Assignment {request.AssignmentId} not found.");
 
-        // 2. Domain kuralını kontrol et (Bu kısım aynı).
         if (assignment.Status != ReviewAssignmentStatus.Accepted)
-        {
-            throw new InvalidOperationException("Cannot submit a review for an assignment that is not in 'Accepted' status.");
-        }
+            throw new InvalidOperationException("You can only submit reviews for accepted assignments.");
 
-        // 3. YENİ ADIM: Eğer bir dosya gönderildiyse, onu kaydet ve URL'ini al.
         string? attachmentUrl = null;
-        if (request.ReviewFile is not null && request.ReviewFile.Length > 0)
+        if (request.ReviewFile != null)
         {
-            // Dosya servisini kullanarak dosyayı kaydet ve erişim adresini al.
             attachmentUrl = await _fileService.SaveReviewFileAsync(request.ReviewFile);
         }
 
-        // 4. Yeni bir Review domain varlığı oluştur (Constructor güncellendi).
-        var newReview = new Domain.Entities.Review(
+        var review = new Domain.Entities.Review(
             request.AssignmentId,
             request.OverallScore,
             request.Confidence,
             request.CommentsToAuthor,
             request.CommentsToEditor,
-            attachmentUrl // <-- Kaydedilen dosyanın URL'i buraya veriliyor.
+            attachmentUrl,
+            request.Recommendation
         );
 
-        // 5. Domain varlığının durumunu güncelle (Bu kısım aynı).
+        // Atamayı 'Submitted' (Gönderildi) olarak işaretle
         assignment.MarkAsSubmitted();
 
-        // 6. Yeni Review'u DbContext'e ekle (Bu kısım aynı).
-        await _context.Reviews.AddAsync(newReview, cancellationToken);
-
-        // 7. Tüm değişiklikleri atomik bir işlemle veritabanına kaydet (Bu kısım aynı).
+        await _context.Reviews.AddAsync(review, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Geriye bir değer dönmeyeceğimizi belirtiyoruz.
         return Unit.Value;
     }
 }

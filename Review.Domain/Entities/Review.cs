@@ -4,13 +4,18 @@ public class Review
 {
     public int Id { get; private set; }
     public Guid AssignmentId { get; private set; }
+
     public decimal OverallScore { get; private set; }
     public int Confidence { get; private set; }
+
     public string CommentsToAuthor { get; private set; }
     public string? CommentsToEditor { get; private set; }
     public string? AttachmentUrl { get; private set; }
-    public DateTime SubmittedAt { get; private set; }
 
+    // YENİ: Editör Kararı Önerisi
+    public string Recommendation { get; private set; } // Accept, MinorRevision, MajorRevision, Reject
+
+    public DateTime SubmittedAt { get; private set; }
 
     public ReviewAssignment Assignment { get; private set; } = null!;
 
@@ -22,20 +27,16 @@ public class Review
         int confidence,
         string commentsToAuthor,
         string? commentsToEditor,
-        string? attachmentUrl)
+        string? attachmentUrl,
+        string recommendation)
     {
-        
-        if (overallScore < 1 || overallScore > 5)
-        {
-            throw new ArgumentOutOfRangeException(nameof(overallScore), "Score must be between 1 and 5.");
-        }
-
         AssignmentId = assignmentId;
         OverallScore = overallScore;
         Confidence = confidence;
         CommentsToAuthor = commentsToAuthor;
         CommentsToEditor = commentsToEditor;
-    AttachmentUrl = attachmentUrl;
+        AttachmentUrl = attachmentUrl;
+        Recommendation = recommendation;
         SubmittedAt = DateTime.UtcNow;
     }
 }
