@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Submission.Application.Contracts;
+using Submission.Domain.Entities;
 using Submission.Domain.Enums;
 
 namespace Submission.Application.Features.Submissions.Commands.RecordDecision;
@@ -22,17 +23,19 @@ public class RecordDecisionCommandHandler : IRequestHandler<RecordDecisionComman
         if (submission == null)
             throw new KeyNotFoundException("Submission not found.");
 
-        // Karara göre statüyü güncelle
         submission.Status = request.Decision;
 
-        // Eğer kabul edildiyse veya reddedildiyse SubmittedAt gibi tarihleri de güncelleyebiliriz
-        // JARVIS Kuralı: Karar verildiğinde sistem bir Audit Log oluşturmalı (Şimdilik Console'a yazalım)
-        Console.WriteLine($"[DECISION RECORDED] Submission: {submission.Id}, Decision: {request.Decision}");
-        Console.WriteLine($"[LETTER]: {request.DecisionLetter}");
+        var auditEntry = new AuditEvent
+        {
+            ActorId = "SystemEditor",
+            Action = "DecisionRecorded",
+            EntityType = "Submission",
+            EntityId = submission.Id,
+            Metadata = $"Decision: {request.Decision}"
+        };
 
+        await _context.AuditEvents.AddAsync(auditEntry, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
-
-        // TODO: Notification Outbox'a bir kayıt atılmalı (Master Prompt Madde H)
 
         return Unit.Value;
     }
