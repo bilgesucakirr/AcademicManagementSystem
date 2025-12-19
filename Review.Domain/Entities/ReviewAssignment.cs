@@ -3,7 +3,7 @@
 public class ReviewAssignment
 {
     public Guid Id { get; private set; }
-    public int SubmissionId { get; private set; }
+    public Guid SubmissionId { get; private set; }
     public Guid ReviewerUserId { get; private set; }
     public DateTime InvitedAt { get; private set; }
     public DateTime? AcceptedAt { get; private set; }
@@ -14,7 +14,7 @@ public class ReviewAssignment
 
     private ReviewAssignment() { }
 
-    public ReviewAssignment(int submissionId, Guid reviewerUserId, DateTime dueAt)
+    public ReviewAssignment(Guid submissionId, Guid reviewerUserId, DateTime dueAt)
     {
         Id = Guid.NewGuid();
         SubmissionId = submissionId;

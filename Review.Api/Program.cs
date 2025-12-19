@@ -1,37 +1,59 @@
-﻿using FluentValidation;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Review.Api.Services;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Review.Application.Contracts;
 using Review.Infrastructure.Persistence;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-const string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<IApplicationDbContext, ReviewDbContext>(options =>
+builder.Services.AddDbContext<ReviewDbContext>(options =>
     options.UseSqlServer(connectionString,
         b => b.MigrationsAssembly(typeof(ReviewDbContext).Assembly.FullName)));
+
+builder.Services.AddScoped<IApplicationDbContext>(provider =>
+    provider.GetRequiredService<ReviewDbContext>());
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("_myAllowSpecificOrigins",
+        policy =>
+        {
+            policy.WithOrigins("https://localhost:7018")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
+var key = Encoding.ASCII.GetBytes("BuCokGizliVeUzunBirAnahtarOlmalı_EnAz32Karakter_2025_Jarvis");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ClockSkew = TimeSpan.Zero
+    };
+});
 
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Review.Application.IAssemblyMarker).Assembly));
 
-builder.Services.AddValidatorsFromAssembly(typeof(Review.Application.IAssemblyMarker).Assembly);
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          // BURASI ÇOK ÖNEMLİ: UI Projenin çalıştığı port (7018) olmalı
-                          policy.WithOrigins("https://localhost:7018")
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
-                      });
-});
-
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IFileService, Review.Api.Services.FileService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -49,26 +71,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseCors("_myAllowSpecificOrigins");
 
-app.UseCors(MyAllowSpecificOrigins);
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ReviewDbContext>();
-        await SeedData.InitializeDatabaseAsync(context);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Veritabanı seed işlemi sırasında bir hata oluştu.");
-    }
-}
-
 app.Run();

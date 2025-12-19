@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Review.Infrastructure.Persistence.Migrations
+namespace Review.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -16,7 +16,7 @@ namespace Review.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SubmissionId = table.Column<int>(type: "int", nullable: false),
+                    SubmissionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ReviewerUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     InvitedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AcceptedAt = table.Column<DateTime>(type: "datetime2", nullable: true),

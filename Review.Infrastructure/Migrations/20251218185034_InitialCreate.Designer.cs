@@ -9,10 +9,10 @@ using Review.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Review.Infrastructure.Persistence.Migrations
+namespace Review.Infrastructure.Migrations
 {
     [DbContext(typeof(ReviewDbContext))]
-    [Migration("20251103095118_InitialCreate")]
+    [Migration("20251218185034_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -86,8 +86,8 @@ namespace Review.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("SubmissionId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 

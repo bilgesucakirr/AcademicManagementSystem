@@ -20,7 +20,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Review.Domain", "Review.Dom
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Review.Infrastructure", "Review.Infrastructure\Review.Infrastructure.csproj", "{C10AB445-BE4C-46B3-B250-E73BE1CD5302}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Review.UI", "..\Review.UI\Review.UI.csproj", "{8159E5DD-D9D8-9099-2CDC-E70DA126289E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.Web", "..\Jarvis.Web\Jarvis.Web.csproj", "{8159E5DD-D9D8-9099-2CDC-E70DA126289E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Identity.Api", "Identity.Api\Identity.Api.csproj", "{95C4D32F-26DA-4DC4-91BF-5844B1109B29}"
 EndProject

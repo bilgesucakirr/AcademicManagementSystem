@@ -8,7 +8,7 @@ using Review.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Review.Infrastructure.Persistence.Migrations
+namespace Review.Infrastructure.Migrations
 {
     [DbContext(typeof(ReviewDbContext))]
     partial class ReviewDbContextModelSnapshot : ModelSnapshot
@@ -83,8 +83,8 @@ namespace Review.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("SubmissionId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 

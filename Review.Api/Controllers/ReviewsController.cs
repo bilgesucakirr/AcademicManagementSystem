@@ -1,25 +1,25 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Review.Application.Features.Reviews.Commands.SubmitReview;
+using Review.Application.Features.Reviews.Queries.GetMyAssignments;
+using System.Security.Claims;
 
 namespace Review.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // Bu, URL'in /api/reviews olmasını sağlar
+[Route("api/[controller]")] 
 public class ReviewsController : ControllerBase
 {
     private readonly ISender _mediator;
 
-    // MediatR'ın kendisini (ISender arayüzü ile) enjekte ediyoruz.
-    // Bu, komutları ve sorguları göndermemizi sağlayan ana araçtır.
+   
     public ReviewsController(ISender mediator)
     {
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Bir hakem değerlendirmesini gönderir.
-    /// </summary>
+  
     /// <param name="assignmentId">Değerlendirmenin yapıldığı atama kimliği.</param>
     /// <param name="command">Değerlendirme verilerini içeren istek gövdesi.</param>
     /// <returns>Başarılı olduğunda 204 No Content döner.</returns>
@@ -27,22 +27,32 @@ public class ReviewsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [IgnoreAntiforgeryToken] // <-- GEREKLİ DEĞİŞİKLİK BURADA!
+    [IgnoreAntiforgeryToken] 
     public async Task<IActionResult> SubmitReview(
         [FromRoute] Guid assignmentId,
         [FromForm] SubmitReviewCommand command)
     {
-        // Gelen URL'deki assignmentId'yi komut nesnesinin içine yerleştiriyoruz.
-        // Bu, verinin tek bir yerde toplanmasını sağlar.
+        
         command.AssignmentId = assignmentId;
-
-        // Komutu MediatR aracılığıyla ilgili Handler'a gönderiyoruz.
-        // MediatR, doğru Handler'ı (SubmitReviewCommandHandler) kendisi bulur ve çalıştırır.
         await _mediator.Send(command);
 
-        // İşlem başarılı olduğunda, HTTP 204 No Content durum kodunu döndürüyoruz.
-        // Bu, "İşlemin başarılı oldu ama sana geri gönderecek bir içeriğim yok" demektir.
-        // POST/PUT/DELETE işlemleri için yaygın bir kullanımdır.
+     
         return NoContent();
+    }
+
+    [HttpGet("my-assignments")]
+    [Authorize(Roles = "Reviewer")]
+    public async Task<IActionResult> GetMyAssignments()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var query = new GetMyAssignmentsQuery(userId);
+        var result = await _mediator.Send(query);
+
+        return Ok(result);
     }
 }
