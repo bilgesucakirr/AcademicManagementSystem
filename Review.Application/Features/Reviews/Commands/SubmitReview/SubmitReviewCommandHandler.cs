@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Review.Application.Contracts; // IApplicationDbContext ve IFileService için
+using Review.Domain.Enums;
 
 namespace Review.Application.Features.Reviews.Commands.SubmitReview;
 
@@ -28,7 +29,7 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
         }
 
         // 2. Domain kuralını kontrol et (Bu kısım aynı).
-        if (assignment.Status != "Accepted")
+        if (assignment.Status != ReviewAssignmentStatus.Accepted)
         {
             throw new InvalidOperationException("Cannot submit a review for an assignment that is not in 'Accepted' status.");
         }

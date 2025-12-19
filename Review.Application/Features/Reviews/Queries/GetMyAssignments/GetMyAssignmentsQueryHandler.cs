@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Review.Application.Contracts;
 using Review.Application.DTOs;
+using Review.Domain.Enums;
 
 namespace Review.Application.Features.Reviews.Queries.GetMyAssignments;
 
@@ -17,12 +18,12 @@ public class GetMyAssignmentsQueryHandler : IRequestHandler<GetMyAssignmentsQuer
     public async Task<List<ReviewAssignmentDto>> Handle(GetMyAssignmentsQuery request, CancellationToken cancellationToken)
     {
         return await _context.ReviewAssignments
-            .Where(a => a.ReviewerUserId == request.ReviewerId && a.Status != "Declined")
+            .Where(a => a.ReviewerUserId == request.ReviewerId && a.Status != ReviewAssignmentStatus.Declined)
             .Select(a => new ReviewAssignmentDto
             {
                 AssignmentId = a.Id,
                 SubmissionId = a.SubmissionId,
-                Status = a.Status,
+                Status = a.Status.ToString(),
                 DueAt = a.DueAt
             })
             .ToListAsync(cancellationToken);

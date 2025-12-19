@@ -17,8 +17,7 @@ public static class SeedData
             return;
         }
 
-        var testAssignment = new ReviewAssignment(
-            submissionId: DummySubmissionId,
+        var testAssignment = ReviewAssignment.CreateInvitation(submissionId: DummySubmissionId,
             reviewerUserId: Guid.NewGuid(),
             dueAt: DateTime.UtcNow.AddDays(10)
         );
@@ -26,7 +25,7 @@ public static class SeedData
         var idProperty = typeof(ReviewAssignment).GetProperty(nameof(ReviewAssignment.Id));
         idProperty!.SetValue(testAssignment, TestAssignmentId);
 
-        testAssignment.Accept();
+        testAssignment.AcceptInvitation();
 
         await context.ReviewAssignments.AddAsync(testAssignment);
         await context.SaveChangesAsync();
