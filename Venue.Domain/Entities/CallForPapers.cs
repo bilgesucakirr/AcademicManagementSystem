@@ -5,32 +5,35 @@ namespace Venue.Domain.Entities;
 public class CallForPapers
 {
     public Guid Id { get; private set; }
-    public Guid VenueEditionId { get; private set; } // Hangi yıla/baskıya ait?
+    public Guid VenueEditionId { get; private set; }
 
-    public string Title { get; private set; }       // Örn: "Main Track Submission"
-    public string Description { get; private set; }
+    public string Title { get; private set; }
+    public string Description { get; private set; } // Zorunlu alan
 
     public DateTime StartDate { get; private set; }
     public DateTime Deadline { get; private set; }
 
-    public BlindMode BlindMode { get; private set; } // Kör hakemlik kuralı
+    public BlindMode BlindMode { get; private set; }
     public CfpStatus Status { get; private set; }
 
-    // Navigation: Bu çağrının konu başlıkları
     public ICollection<Track> Tracks { get; private set; } = new List<Track>();
 
-    public CallForPapers(Guid venueEditionId, string title, DateTime start, DateTime deadline, BlindMode blindMode)
+    // EF Core için boş constructor
+    private CallForPapers() { }
+
+    // GÜNCELLEME: 'description' parametresi eklendi
+    public CallForPapers(Guid venueEditionId, string title, string description, DateTime startDate, DateTime deadline, BlindMode blindMode)
     {
         Id = Guid.NewGuid();
         VenueEditionId = venueEditionId;
         Title = title;
-        StartDate = start;
+        Description = description; // Artık nesne oluşurken atanıyor
+        StartDate = startDate;
         Deadline = deadline;
         BlindMode = blindMode;
-        Status = CfpStatus.Draft; // Varsayılan taslak olarak başlar
+        Status = CfpStatus.Draft;
     }
 
-    // İş Kuralları (Business Logic)
     public void Open() => Status = CfpStatus.Open;
     public void Close() => Status = CfpStatus.Closed;
 

@@ -1,4 +1,6 @@
-﻿namespace Venue.Domain.Entities;
+﻿using Venue.Domain.Entities;
+
+namespace Venue.Domain.Entities;
 
 public class VenueEdition
 {
@@ -10,16 +12,18 @@ public class VenueEdition
     public DateTime EndDate { get; private set; }
     public bool IsActive { get; private set; }
 
-    // Bu baskıya ait çağrılar
     public ICollection<CallForPapers> CallForPapers { get; private set; } = new List<CallForPapers>();
 
-    public VenueEdition(Guid venueId, string name, DateTime start, DateTime end)
+   
+    private VenueEdition() { }
+
+    public VenueEdition(Guid venueId, string name, DateTime startDate, DateTime endDate)
     {
         Id = Guid.NewGuid();
         VenueId = venueId;
         Name = name;
-        StartDate = start;
-        EndDate = end;
+        StartDate = startDate; // Artık property ismiyle eşleşiyor
+        EndDate = endDate;     // Artık property ismiyle eşleşiyor
         IsActive = true;
     }
 

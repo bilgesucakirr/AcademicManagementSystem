@@ -32,7 +32,7 @@ public class GetSubmissionsListQueryHandler : IRequestHandler<GetSubmissionsList
         }
         else if (request.UserRole == "EditorInChief" || request.UserRole == "Admin")
         {
-            // Filtre yok, hepsini gör
+
         }
         else
         {
@@ -46,7 +46,8 @@ public class GetSubmissionsListQueryHandler : IRequestHandler<GetSubmissionsList
                 Id = s.Id,
                 Title = s.Title,
                 Status = s.Status.ToString(),
-                CreatedAt = s.CreatedAt
+                CreatedAt = s.CreatedAt,
+                SubmitterName = "Unknown"
             })
             .ToListAsync(cancellationToken);
     }

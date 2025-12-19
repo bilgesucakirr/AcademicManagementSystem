@@ -12,7 +12,7 @@ using Submission.Infrastructure.Persistence;
 namespace Submission.Infrastructure.Migrations
 {
     [DbContext(typeof(SubmissionDbContext))]
-    [Migration("20251218020943_InitialCreate")]
+    [Migration("20251219142831_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -80,14 +80,11 @@ namespace Submission.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ConferenceId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("CallForPapersId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConflictDetails")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Context")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -103,9 +100,6 @@ namespace Submission.Infrastructure.Migrations
 
                     b.Property<bool>("IsOriginal")
                         .HasColumnType("bit");
-
-                    b.Property<int?>("JournalId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Keywords")
                         .IsRequired()
@@ -127,11 +121,17 @@ namespace Submission.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TrackId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("TrackId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("VenueEditionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("VenueId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 

@@ -1,15 +1,14 @@
 ﻿using MediatR;
-using Submission.Application.Contracts; 
-using Submission.Domain.Entities;       
-using Submission.Domain.Enums;         
+using Submission.Application.Contracts;
+using Submission.Domain.Entities;
+using Submission.Domain.Enums;
 
 namespace Submission.Application.Features.Submissions.Commands.CreateSubmission;
 
 public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCommand, Guid>
 {
-    private readonly ISubmissionDbContext _context; 
+    private readonly ISubmissionDbContext _context;
     private readonly IFileService _fileService;
-
 
     public CreateSubmissionCommandHandler(ISubmissionDbContext context, IFileService fileService)
     {
@@ -19,22 +18,27 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
 
     public async Task<Guid> Handle(CreateSubmissionCommand request, CancellationToken cancellationToken)
     {
-        
         var submission = new Domain.Entities.Submission
         {
             Id = Guid.NewGuid(),
+            VenueId = request.VenueId,
+            VenueEditionId = request.VenueEditionId,
+            CallForPapersId = request.CallForPapersId,
+            TrackId = request.TrackId,
             Title = request.Title,
             Abstract = request.Abstract,
             Keywords = request.Keywords,
-           
-            ConferenceId = request.ConferenceId,
-            JournalId = request.JournalId,
+            Type = request.Type,
+            IsOriginal = request.IsOriginal,
+            IsNotElsewhere = request.IsNotElsewhere,
+            HasConsent = request.HasConsent,
+            HasConflictOfInterest = request.HasConflictOfInterest,
+            ConflictDetails = request.ConflictDetails,
             SubmitterUserId = request.SubmitterId,
             CreatedAt = DateTime.UtcNow,
-            Status = SubmissionStatus.Submitted
+            Status = SubmissionStatus.Draft
         };
 
-        // Yazarları ekle
         foreach (var authorDto in request.Authors)
         {
             submission.Authors.Add(new Author
@@ -50,7 +54,6 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
             });
         }
 
-        // Dosya varsa kaydet
         if (request.ManuscriptFile != null)
         {
             var fileUrl = await _fileService.SaveFileAsync(request.ManuscriptFile);
@@ -59,7 +62,7 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
             {
                 Id = Guid.NewGuid(),
                 OriginalFileName = request.ManuscriptFile.FileName,
-                StoragePath = fileUrl, 
+                StoragePath = fileUrl,
                 Type = FileType.MainManuscript,
                 SubmissionId = submission.Id
             });

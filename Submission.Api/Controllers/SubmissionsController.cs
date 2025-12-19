@@ -2,16 +2,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Submission.Application.Features.Submissions.Commands.CreateSubmission;
-using Submission.Application.Features.Submissions.Queries.GetMySubmissions; 
+using Submission.Application.Features.Submissions.Queries.GetMySubmissions;
 using System.Security.Claims;
 using Submission.Application.Features.Submissions.Queries.GetSubmissionsList;
-
 
 namespace Submission.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize] // Sadece giriş yapmış kullanıcılar makale gönderebilir
+[Authorize]
 public class SubmissionsController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -59,7 +58,12 @@ public class SubmissionsController : ControllerBase
     {
         var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
         var trackIdClaim = User.FindFirst("AssignedTrackId")?.Value;
-        int? trackId = trackIdClaim != null ? int.Parse(trackIdClaim) : null;
+
+        Guid? trackId = null;
+        if (!string.IsNullOrEmpty(trackIdClaim) && Guid.TryParse(trackIdClaim, out var parsedGuid))
+        {
+            trackId = parsedGuid;
+        }
 
         var query = new GetSubmissionsListQuery(roleClaim!, trackId);
         var result = await _mediator.Send(query);
