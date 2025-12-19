@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Venue.Application.Features.Venues.Queries.GetAllVenues;
+using Venue.Application.Features.Venues.Queries.GetVenueById;
 
 namespace Venue.Api.Controllers;
 
@@ -20,5 +21,12 @@ public class VenuesController : ControllerBase
     {
         var result = await _mediator.Send(new GetAllVenuesQuery());
         return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var result = await _mediator.Send(new GetVenueByIdQuery(id));
+        return result != null ? Ok(result) : NotFound();
     }
 }
