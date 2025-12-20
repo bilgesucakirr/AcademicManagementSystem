@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Submission.Application.Features.Submissions.Commands.CreateSubmission;
+using Submission.Application.Features.Submissions.Commands.FinalizeSubmission;
 using Submission.Application.Features.Submissions.Commands.RecordDecision;
 using Submission.Application.Features.Submissions.Queries.GetMySubmissions;
 using Submission.Application.Features.Submissions.Queries.GetSubmissionsList;
@@ -79,5 +80,17 @@ public class SubmissionsController : ControllerBase
         command.SubmissionId = id;
         await _mediator.Send(command);
         return Ok(new { Message = "Decision recorded and author notified." });
+    }
+
+    [HttpPost("{id}/finalize")]
+    [Authorize]
+    public async Task<IActionResult> Finalize(Guid id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+            return Unauthorized();
+
+        var refNo = await _mediator.Send(new FinalizeSubmissionCommand(id, userId));
+        return Ok(new { ReferenceNumber = refNo });
     }
 }

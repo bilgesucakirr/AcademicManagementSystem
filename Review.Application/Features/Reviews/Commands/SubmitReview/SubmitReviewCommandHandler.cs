@@ -9,11 +9,13 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
 {
     private readonly IApplicationDbContext _context;
     private readonly IFileService _fileService;
+    private readonly ISubmissionIntegrationService _integrationService;
 
-    public SubmitReviewCommandHandler(IApplicationDbContext context, IFileService fileService)
+    public SubmitReviewCommandHandler(IApplicationDbContext context, IFileService fileService, ISubmissionIntegrationService integrationService)
     {
         _context = context;
         _fileService = fileService;
+        _integrationService = integrationService;
     }
 
     public async Task<Unit> Handle(SubmitReviewCommand request, CancellationToken cancellationToken)
@@ -25,7 +27,7 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
             throw new KeyNotFoundException($"Assignment {request.AssignmentId} not found.");
 
         if (assignment.Status != ReviewAssignmentStatus.Accepted)
-            throw new InvalidOperationException("You can only submit reviews for accepted assignments.");
+            throw new InvalidOperationException("Cannot submit review.");
 
         string? attachmentUrl = null;
         if (request.ReviewFile != null)
@@ -43,11 +45,12 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
             request.Recommendation
         );
 
-        // Atamayı 'Submitted' (Gönderildi) olarak işaretle
         assignment.MarkAsSubmitted();
 
         await _context.Reviews.AddAsync(review, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _integrationService.UpdateStatsAsync(assignment.SubmissionId, 0, 1);
 
         return Unit.Value;
     }

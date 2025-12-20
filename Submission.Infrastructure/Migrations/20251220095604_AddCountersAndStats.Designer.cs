@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Submission.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Submission.Infrastructure.Persistence;
 namespace Submission.Infrastructure.Migrations
 {
     [DbContext(typeof(SubmissionDbContext))]
-    partial class SubmissionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251220095604_AddCountersAndStats")]
+    partial class AddCountersAndStats
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

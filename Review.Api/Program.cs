@@ -58,6 +58,11 @@ builder.Services.AddScoped<IFileService, Review.Api.Services.FileService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddHttpClient<Review.Application.Contracts.ISubmissionIntegrationService, Review.Infrastructure.Services.SubmissionIntegrationService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7004/");
+});
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Review.Api", Version = "v1" });
