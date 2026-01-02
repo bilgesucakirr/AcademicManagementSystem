@@ -1,5 +1,7 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Venue.Application.Features.Venues.Commands.CreateVenue;
 using Venue.Application.Features.Venues.Queries.GetAllVenues;
 using Venue.Application.Features.Venues.Queries.GetVenueById;
 
@@ -28,5 +30,13 @@ public class VenuesController : ControllerBase
     {
         var result = await _mediator.Send(new GetVenueByIdQuery(id));
         return result != null ? Ok(result) : NotFound();
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin,EditorInChief")]
+    public async Task<IActionResult> Create([FromBody] CreateVenueCommand command)
+    {
+        var id = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetById), new { id }, id);
     }
 }
