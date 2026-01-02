@@ -73,6 +73,22 @@ public class SubmissionsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var query = new Submission.Application.Features.Submissions.Queries.GetSubmissionDetail.GetSubmissionDetailQuery(id);
+        var result = await _mediator.Send(query);
+
+        if (result == null) return NotFound();
+
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+       
+
+        return Ok(result);
+    }
+
     [HttpPost("{id}/decision")]
     [Authorize(Roles = "Admin,EditorInChief,TrackChair")]
     public async Task<IActionResult> RecordDecision(Guid id, [FromBody] RecordDecisionCommand command)
