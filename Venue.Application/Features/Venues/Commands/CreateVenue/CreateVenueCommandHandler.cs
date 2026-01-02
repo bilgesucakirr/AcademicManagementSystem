@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Venue.Application.Common.Interfaces;
+using Venue.Domain.Enums;
 
 namespace Venue.Application.Features.Venues.Commands.CreateVenue;
 
@@ -14,10 +15,17 @@ public class CreateVenueCommandHandler : IRequestHandler<CreateVenueCommand, Gui
 
     public async Task<Guid> Handle(CreateVenueCommand request, CancellationToken cancellationToken)
     {
+        // String -> Enum dönüşümü ve Validasyon
+        if (!Enum.TryParse<VenueType>(request.Type, true, out var venueType))
+        {
+            // Eğer geçersiz bir tip gelirse (örn: "Seminer") hata fırlat
+            throw new ArgumentException($"Invalid Venue Type: {request.Type}. Allowed values: Conference, Journal");
+        }
+
         var venue = new Domain.Entities.Venue(
             request.Name,
             request.Acronym,
-            request.Type,
+            venueType, // Çevrilmiş enum'ı kullanıyoruz
             request.Description
         );
 
