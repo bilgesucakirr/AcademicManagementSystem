@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Venue.Application.Common.Interfaces;
+using Venue.Domain.Entities;
 using Venue.Domain.Enums;
 
 namespace Venue.Application.Features.Venues.Commands.CreateVenue;
@@ -15,19 +16,44 @@ public class CreateVenueCommandHandler : IRequestHandler<CreateVenueCommand, Gui
 
     public async Task<Guid> Handle(CreateVenueCommand request, CancellationToken cancellationToken)
     {
-        // String -> Enum dönüşümü ve Validasyon
         if (!Enum.TryParse<VenueType>(request.Type, true, out var venueType))
         {
-            // Eğer geçersiz bir tip gelirse (örn: "Seminer") hata fırlat
-            throw new ArgumentException($"Invalid Venue Type: {request.Type}. Allowed values: Conference, Journal");
+            throw new ArgumentException($"Invalid Venue Type: {request.Type}");
         }
 
+        // 1. Venue (Konferans/Dergi) Oluştur
         var venue = new Domain.Entities.Venue(
             request.Name,
             request.Acronym,
-            venueType, // Çevrilmiş enum'ı kullanıyoruz
+            venueType,
             request.Description
         );
+
+        // 2. Varsayılan Bir Edition (Baskı/Dönem) Oluştur (Örn: 2025)
+        var editionName = $"{DateTime.UtcNow.Year} Edition";
+        var edition = new VenueEdition(
+            venue.Id,
+            editionName,
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddYears(1)
+        );
+
+        // 3. Varsayılan Çağrı (Call For Papers) Oluştur
+        var cfp = new CallForPapers(
+            edition.Id,
+            "General Submission",
+            "Open for all topics related to the venue scope.",
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddMonths(6),
+            BlindMode.SingleBlind
+        );
+        cfp.Open();
+
+     
+        cfp.AddTrack("General Track", "General submissions.", null);
+
+        edition.CallForPapers.Add(cfp);
+        venue.Editions.Add(edition);
 
         _context.Venues.Add(venue);
         await _context.SaveChangesAsync(cancellationToken);

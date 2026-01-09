@@ -8,43 +8,39 @@ namespace Review.Application.Features.Assignments.Commands.InviteReviewer;
 public class InviteReviewerCommandHandler : IRequestHandler<InviteReviewerCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public InviteReviewerCommandHandler(IApplicationDbContext context)
+    public InviteReviewerCommandHandler(IApplicationDbContext context, IEmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
     public async Task<Guid> Handle(InviteReviewerCommand request, CancellationToken cancellationToken)
     {
-        // 1. Bu kullanıcıya zaten bu makale için atama yapılmış mı?
-        // (Reddedilmiş veya süresi dolmuş olsa bile aynı kişiyi tekrar davet etmeyi engelleyebiliriz veya izin verebiliriz. Şimdilik açık bir atama var mı ona bakalım.)
         var existingAssignment = _context.ReviewAssignments
             .FirstOrDefault(ra =>
                 ra.SubmissionId == request.SubmissionId &&
                 ra.ReviewerUserId == request.ReviewerUserId &&
-                ra.Status != ReviewAssignmentStatus.Declined); // Reddeden tekrar davet edilebilir mantığı
+                ra.Status != ReviewAssignmentStatus.Declined);
 
         if (existingAssignment != null)
         {
-            throw new InvalidOperationException("This reviewer has already been invited or assigned to this submission.");
+            throw new InvalidOperationException("This reviewer has already been invited.");
         }
 
-        // 2. Default süre 14 gün
         var dueAt = request.DueDate ?? DateTime.UtcNow.AddDays(14);
 
-        // 3. Domain Entity'yi Factory Method ile oluştur
         var assignment = ReviewAssignment.CreateInvitation(
             request.SubmissionId,
             request.ReviewerUserId,
             dueAt
         );
 
-        // 4. Veritabanına ekle
         await _context.ReviewAssignments.AddAsync(assignment, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // TODO: Burada bir "EmailService" tetiklenip hakeme mail atılmalı.
-        // "Sayın X, Y başlıklı makaleyi değerlendirmeniz için davet edildiniz."
+        await _emailService.SendInvitationEmailAsync(request.ReviewerEmail, assignment.Id.ToString(), request.SubmissionTitle);
 
         return assignment.Id;
     }

@@ -9,18 +9,25 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
 {
     private readonly ISubmissionDbContext _context;
     private readonly IFileService _fileService;
+    private readonly IEmailService _emailService;
 
-    public CreateSubmissionCommandHandler(ISubmissionDbContext context, IFileService fileService)
+    public CreateSubmissionCommandHandler(
+        ISubmissionDbContext context,
+        IFileService fileService,
+        IEmailService emailService)
     {
         _context = context;
         _fileService = fileService;
+        _emailService = emailService;
     }
 
     public async Task<Guid> Handle(CreateSubmissionCommand request, CancellationToken cancellationToken)
     {
+        var submissionId = Guid.NewGuid();
+
         var submission = new Domain.Entities.Submission
         {
-            Id = Guid.NewGuid(),
+            Id = submissionId,
             VenueId = request.VenueId,
             VenueEditionId = request.VenueEditionId,
             CallForPapersId = request.CallForPapersId,
@@ -50,7 +57,7 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
                 Affiliation = authorDto.Affiliation,
                 Country = authorDto.Country,
                 IsCorresponding = authorDto.IsCorresponding,
-                SubmissionId = submission.Id
+                SubmissionId = submissionId
             });
         }
 
@@ -64,12 +71,44 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
                 OriginalFileName = request.ManuscriptFile.FileName,
                 StoragePath = fileUrl,
                 Type = FileType.MainManuscript,
-                SubmissionId = submission.Id
+                SubmissionId = submissionId
             });
         }
 
         await _context.Submissions.AddAsync(submission, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            // 1. ADIM: İşlemi başlatan kişiye (Bilgesu Çakır) mail gönder
+            if (!string.IsNullOrEmpty(request.SubmitterEmail))
+            {
+                await _emailService.SendSubmissionReceiptAsync(
+                    request.SubmitterEmail,
+                    request.SubmitterName,
+                    request.Title);
+            }
+
+            // 2. ADIM: Formdaki yazar listesindeki her bir yazara mail gönder
+            foreach (var author in request.Authors)
+            {
+                // Eğer bu yazarın maili, işlemi yapan kişinin mailinden farklıysa mail at
+                if (!string.Equals(author.Email, request.SubmitterEmail, StringComparison.OrdinalIgnoreCase))
+                {
+                    // DÜZELTME: request.SubmitterName yerine author.FirstName + author.LastName kullanıyoruz
+                    string fullName = $"{author.FirstName} {author.LastName}";
+
+                    await _emailService.SendSubmissionReceiptAsync(
+                        author.Email,
+                        fullName,
+                        request.Title);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MAIL NOTIFY ERROR] {ex.Message}");
+        }
 
         return submission.Id;
     }

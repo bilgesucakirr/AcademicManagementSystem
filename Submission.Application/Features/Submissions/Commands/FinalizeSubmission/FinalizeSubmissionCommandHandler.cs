@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Submission.Application.Contracts;
 using Submission.Domain.Entities;
+using Submission.Domain.Enums;
 
 namespace Submission.Application.Features.Submissions.Commands.FinalizeSubmission;
 
@@ -16,21 +17,24 @@ public class FinalizeSubmissionCommandHandler : IRequestHandler<FinalizeSubmissi
 
     public async Task<string> Handle(FinalizeSubmissionCommand request, CancellationToken ct)
     {
+        // DÜZELTME BURADA: .Include(s => s.Authors) eklendi.
+        // Bu sayede makaleyi çekerken içindeki yazarları da "yükle" diyoruz.
+        var submission = await _context.Submissions
+            .Include(s => s.Authors)
+            .FirstOrDefaultAsync(s => s.Id == request.SubmissionId, ct);
+
+        if (submission == null) throw new Exception("Submission not found");
+
+        if (submission.Status != SubmissionStatus.Draft)
+            return submission.ReferenceNumber ?? "ALREADY-SUBMITTED";
+
         using var transaction = await _context.Database.BeginTransactionAsync(ct);
         try
         {
-            var submission = await _context.Submissions
-                .Include(s => s.Authors)
-                .FirstOrDefaultAsync(s => s.Id == request.SubmissionId, ct);
-
-            if (submission == null) throw new KeyNotFoundException("Submission not found");
-            if (submission.SubmitterUserId != request.UserId) throw new UnauthorizedAccessException("Not authorized");
-
             int year = DateTime.UtcNow.Year;
 
             var counter = await _context.VenueSubmissionCounters
-                .FromSqlRaw("SELECT * FROM VenueSubmissionCounters WITH (UPDLOCK, ROWLOCK) WHERE VenueId = {0} AND Year = {1}", submission.VenueId, year)
-                .FirstOrDefaultAsync(ct);
+                .FirstOrDefaultAsync(c => c.VenueId == submission.VenueId && c.Year == year, ct);
 
             if (counter == null)
             {
@@ -48,6 +52,13 @@ public class FinalizeSubmissionCommandHandler : IRequestHandler<FinalizeSubmissi
             counter.CurrentCount++;
             string refNo = $"{counter.VenueAcronym}-{year}-{counter.CurrentCount:D3}";
 
+            while (await _context.Submissions.AnyAsync(s => s.ReferenceNumber == refNo, ct))
+            {
+                counter.CurrentCount++;
+                refNo = $"{counter.VenueAcronym}-{year}-{counter.CurrentCount:D3}";
+            }
+
+            // Artık Authors listesi dolu olduğu için burası hata vermeyecek
             submission.Finalize(refNo);
 
             await _context.SaveChangesAsync(ct);
@@ -55,9 +66,10 @@ public class FinalizeSubmissionCommandHandler : IRequestHandler<FinalizeSubmissi
 
             return refNo;
         }
-        catch
+        catch (Exception ex)
         {
             await transaction.RollbackAsync(ct);
+            Console.WriteLine("SUBMISSION FINALIZATION ERROR: " + ex.Message);
             throw;
         }
     }

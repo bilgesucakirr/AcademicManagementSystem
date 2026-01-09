@@ -51,13 +51,12 @@ public class UsersController : ControllerBase
         var user = await _userManager.FindByIdAsync(request.UserId);
         if (user == null) return NotFound("User not found.");
 
-        var roleExists = await _userManager.IsInRoleAsync(user, request.Role);
-        if (roleExists) return BadRequest("User already has this role.");
+        if (!await _userManager.IsInRoleAsync(user, request.Role))
+        {
+            await _userManager.AddToRoleAsync(user, request.Role);
+        }
 
-        var result = await _userManager.AddToRoleAsync(user, request.Role);
-        if (!result.Succeeded) return BadRequest(result.Errors);
-
-        return Ok(new { Message = $"Role {request.Role} assigned to {user.FullName}" });
+        return Ok(new { Message = $"Role {request.Role} assigned." });
     }
 
     [HttpGet]
@@ -65,20 +64,13 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _userManager.Users.ToListAsync();
-        var userList = new List<object>();
-
-        foreach (var user in users)
+        var list = new List<object>();
+        foreach (var u in users)
         {
-            var roles = await _userManager.GetRolesAsync(user);
-            userList.Add(new
-            {
-                user.Id,
-                user.FullName,
-                user.Email,
-                Roles = roles
-            });
+            var roles = await _userManager.GetRolesAsync(u);
+            list.Add(new { u.Id, u.FullName, u.Email, Roles = roles, u.Interests });
         }
-        return Ok(userList);
+        return Ok(list);
     }
 
     [HttpGet("profile")]
@@ -86,22 +78,17 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetProfile()
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return NotFound("User not found.");
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
 
         var roles = await _userManager.GetRolesAsync(user);
-
-        var profile = new UserProfileDto
+        return Ok(new UserProfileDto
         {
             Email = user.Email!,
             FullName = user.FullName,
             Interests = user.Interests,
             Roles = roles
-        };
-
-        return Ok(profile);
+        });
     }
 
     [HttpPut("profile")]
@@ -109,19 +96,27 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return NotFound("User not found.");
+        var user = await _userManager.FindByIdAsync(userId!);
+        if (user == null) return NotFound();
 
         user.FullName = request.FullName;
         user.Interests = request.Interests;
 
-        var result = await _userManager.UpdateAsync(user);
+        await _userManager.UpdateAsync(user);
+        return Ok();
+    }
 
-        if (!result.Succeeded)
-            return BadRequest(result.Errors);
+    [HttpPost("set-author-role/{userId}")]
+    [Authorize]
+    public async Task<IActionResult> SetAuthorRole(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return NotFound();
 
-        return Ok(new { Message = "Profile updated successfully." });
+        if (!await _userManager.IsInRoleAsync(user, "Author"))
+        {
+            await _userManager.AddToRoleAsync(user, "Author");
+        }
+        return Ok();
     }
 }

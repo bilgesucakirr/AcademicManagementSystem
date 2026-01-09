@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Review.Application.Features.Assignments.Commands.AcceptInvitation;
 using Review.Application.Features.Assignments.Commands.DeclineInvitation;
 using Review.Application.Features.Assignments.Commands.InviteReviewer;
+// Bu satırı eklemek zorundasın, yoksa GetAssignmentQuery'yi tanımaz:
+using Review.Application.Features.Assignments.Queries.GetAssignment;
 
 namespace Review.Api.Controllers;
 
@@ -17,6 +19,8 @@ public class AssignmentsController : ControllerBase
     {
         _mediator = mediator;
     }
+
+    // --- MEVCUT METOTLAR ---
 
     [HttpPost("invite")]
     [Authorize(Roles = "Admin,EditorInChief,TrackChair")]
@@ -40,5 +44,17 @@ public class AssignmentsController : ControllerBase
     {
         await _mediator.Send(new DeclineInvitationCommand(id, reason));
         return Ok(new { Message = "Invitation declined." });
+    }
+
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Reviewer,Admin")]
+    public async Task<IActionResult> GetAssignmentById(Guid id)
+    {
+        var query = new GetAssignmentQuery(id);
+        var result = await _mediator.Send(query);
+
+        if (result == null) return NotFound();
+
+        return Ok(result);
     }
 }

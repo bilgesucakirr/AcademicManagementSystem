@@ -6,6 +6,7 @@ using Review.Application.Contracts;
 using Review.Infrastructure.Persistence;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -51,6 +52,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Review.Application.IAssemblyMarker).Assembly));
+builder.Services.AddScoped<Review.Application.Contracts.IEmailService, Review.Infrastructure.Services.EmailService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFileService, Review.Api.Services.FileService>();

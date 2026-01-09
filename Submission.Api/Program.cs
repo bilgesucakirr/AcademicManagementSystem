@@ -54,7 +54,7 @@ builder.Services.AddMediatR(cfg =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFileService, Submission.Api.Services.FileService>();
-
+builder.Services.AddScoped<Submission.Application.Contracts.IEmailService, Submission.Infrastructure.Services.EmailService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 

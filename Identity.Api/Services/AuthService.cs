@@ -1,25 +1,24 @@
-﻿using Identity.Api.Dtos;
+﻿
+using Identity.Api.Dtos;
 using Identity.Api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-
 namespace Identity.Api.Services;
-
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
     private readonly IInvitationService _invitationService;
-
-    public AuthService(
-        UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration,
-        IInvitationService invitationService)
+    
+public AuthService(
+    UserManager<ApplicationUser> userManager,
+    RoleManager<IdentityRole> roleManager,
+    IConfiguration configuration,
+    IInvitationService invitationService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -46,20 +45,12 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
             return new AuthResponse { Success = false, Message = string.Join(", ", result.Errors.Select(e => e.Description)) };
 
-        if (!await _roleManager.RoleExistsAsync("User"))
-            await _roleManager.CreateAsync(new IdentityRole("User"));
-
-        if (!await _roleManager.RoleExistsAsync("Admin"))
-            await _roleManager.CreateAsync(new IdentityRole("Admin"));
-
-        if (!await _roleManager.RoleExistsAsync("EditorInChief"))
-            await _roleManager.CreateAsync(new IdentityRole("EditorInChief"));
-
-        if (!await _roleManager.RoleExistsAsync("Reviewer"))
-            await _roleManager.CreateAsync(new IdentityRole("Reviewer"));
-
-        if (!await _roleManager.RoleExistsAsync("TrackChair"))
-            await _roleManager.CreateAsync(new IdentityRole("TrackChair"));
+        string[] roles = { "User", "Admin", "EditorInChief", "Reviewer", "TrackChair", "Author" };
+        foreach (var role in roles)
+        {
+            if (!await _roleManager.RoleExistsAsync(role))
+                await _roleManager.CreateAsync(new IdentityRole(role));
+        }
 
         await _userManager.AddToRoleAsync(user, "User");
 
@@ -70,7 +61,7 @@ public class AuthService : IAuthService
         }
 
         var token = await GenerateJwtToken(user);
-        var roles = await _userManager.GetRolesAsync(user);
+        var userRoles = await _userManager.GetRolesAsync(user);
 
         return new AuthResponse
         {
@@ -78,7 +69,7 @@ public class AuthService : IAuthService
             Token = token,
             UserId = user.Id,
             FullName = user.FullName,
-            Role = roles.FirstOrDefault() ?? "User"
+            Role = userRoles.FirstOrDefault() ?? "User"
         };
     }
 
@@ -111,11 +102,11 @@ public class AuthService : IAuthService
         var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]!);
 
         var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email!),
-            new Claim(ClaimTypes.Name, user.FullName)
-        };
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Email, user.Email!),
+        new Claim(ClaimTypes.Name, user.FullName)
+    };
 
         var roles = await _userManager.GetRolesAsync(user);
         foreach (var role in roles)
