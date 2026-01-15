@@ -5,6 +5,7 @@ namespace Submission.Application.DTOs;
 public class SubmissionDetailDto
 {
     public Guid Id { get; set; }
+    public Guid VenueId { get; set; }
     public string ReferenceNumber { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Abstract { get; set; } = string.Empty;

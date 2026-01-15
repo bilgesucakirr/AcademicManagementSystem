@@ -21,38 +21,45 @@ public class CreateVenueCommandHandler : IRequestHandler<CreateVenueCommand, Gui
             throw new ArgumentException($"Invalid Venue Type: {request.Type}");
         }
 
-        // 1. Venue (Konferans/Dergi) Oluştur
-        var venue = new Domain.Entities.Venue(
+        // HATA BURADAYDI: Sınıf adını tam yoluyla (Venue.Domain.Entities.Venue) yazıyoruz
+        var venue = new Venue.Domain.Entities.Venue(
             request.Name,
             request.Acronym,
             venueType,
-            request.Description
+            request.AimAndScope,
+            request.Keywords,
+            request.ReviewFormUrl,
+            request.OrganizerEmail
         );
 
-        // 2. Varsayılan Bir Edition (Baskı/Dönem) Oluştur (Örn: 2025)
-        var editionName = $"{DateTime.UtcNow.Year} Edition";
         var edition = new VenueEdition(
             venue.Id,
-            editionName,
+            $"{DateTime.UtcNow.Year} Edition",
             DateTime.UtcNow,
             DateTime.UtcNow.AddYears(1)
         );
 
-        // 3. Varsayılan Çağrı (Call For Papers) Oluştur
         var cfp = new CallForPapers(
             edition.Id,
             "General Submission",
-            "Open for all topics related to the venue scope.",
+            "Open for submissions related to the venue scope.",
             DateTime.UtcNow,
             DateTime.UtcNow.AddMonths(6),
             BlindMode.SingleBlind
         );
         cfp.Open();
 
-     
-        cfp.AddTrack("General Track", "General submissions.", null);
+        if (request.Tracks != null && request.Tracks.Any())
+        {
+            foreach (var trackName in request.Tracks)
+            {
+                cfp.AddTrack(trackName, null, null);
+            }
+        }
 
         edition.CallForPapers.Add(cfp);
+
+        // Burada da isim çakışması olmaması için koleksiyon üzerinden gidiyoruz
         venue.Editions.Add(edition);
 
         _context.Venues.Add(venue);

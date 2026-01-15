@@ -11,30 +11,17 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
     private readonly IFileService _fileService;
     private readonly IEmailService _emailService;
 
-    public CreateSubmissionCommandHandler(
-        ISubmissionDbContext context,
-        IFileService fileService,
-        IEmailService emailService)
+    public CreateSubmissionCommandHandler(ISubmissionDbContext context, IFileService fileService, IEmailService emailService)
     {
-        _context = context;
-        _fileService = fileService;
-        _emailService = emailService;
+        _context = context; _fileService = fileService; _emailService = emailService;
     }
 
     public async Task<Guid> Handle(CreateSubmissionCommand request, CancellationToken cancellationToken)
     {
-        // 1. Gereksinim: Dosya Formatı Kontrolü
-        if (request.ManuscriptFile != null)
-        {
-            var ext = Path.GetExtension(request.ManuscriptFile.FileName).ToLower();
-            if (ext != ".docx")
-            {
-                throw new InvalidOperationException("System policy requires manuscripts to be in .docx (Word) format only.");
-            }
-        }
+        if (request.ManuscriptFile != null && Path.GetExtension(request.ManuscriptFile.FileName).ToLower() != ".docx")
+            throw new InvalidOperationException("Only .docx files are allowed.");
 
         var submissionId = Guid.NewGuid();
-
         var submission = new Domain.Entities.Submission
         {
             Id = submissionId,
@@ -46,74 +33,39 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
             Abstract = request.Abstract,
             Keywords = request.Keywords,
             Type = request.Type,
-            IsOriginal = request.IsOriginal,
-            IsNotElsewhere = request.IsNotElsewhere,
-            HasConsent = request.HasConsent,
-            HasConflictOfInterest = request.HasConflictOfInterest,
-            ConflictDetails = request.ConflictDetails,
             SubmitterUserId = request.SubmitterId,
+            Status = SubmissionStatus.Draft,
             CreatedAt = DateTime.UtcNow,
-            Status = SubmissionStatus.Draft
+            IsOriginal = request.IsOriginal,
+            HasConsent = request.HasConsent,
+            IsNotElsewhere = request.IsNotElsewhere
         };
 
-        foreach (var authorDto in request.Authors)
+        foreach (var author in request.Authors)
         {
-            submission.Authors.Add(new Author
-            {
-                Id = Guid.NewGuid(),
-                FirstName = authorDto.FirstName,
-                LastName = authorDto.LastName,
-                Email = authorDto.Email,
-                Affiliation = authorDto.Affiliation,
-                Country = authorDto.Country,
-                IsCorresponding = authorDto.IsCorresponding,
-                SubmissionId = submissionId
-            });
+            submission.Authors.Add(new Author { Id = Guid.NewGuid(), FirstName = author.FirstName, LastName = author.LastName, Email = author.Email, Affiliation = author.Affiliation, Country = author.Country, IsCorresponding = author.IsCorresponding, SubmissionId = submissionId });
         }
 
         if (request.ManuscriptFile != null)
         {
-            var fileUrl = await _fileService.SaveFileAsync(request.ManuscriptFile);
-
-            submission.Files.Add(new SubmissionFile
-            {
-                Id = Guid.NewGuid(),
-                OriginalFileName = request.ManuscriptFile.FileName,
-                StoragePath = fileUrl,
-                Type = FileType.MainManuscript,
-                SubmissionId = submissionId
-            });
+            var url = await _fileService.SaveFileAsync(request.ManuscriptFile);
+            submission.Files.Add(new SubmissionFile { Id = Guid.NewGuid(), OriginalFileName = request.ManuscriptFile.FileName, StoragePath = url, Type = FileType.MainManuscript, SubmissionId = submissionId });
         }
 
         await _context.Submissions.AddAsync(submission, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // MAİL BİLDİRİMLERİ
         try
         {
             if (!string.IsNullOrEmpty(request.SubmitterEmail))
-            {
-                await _emailService.SendSubmissionReceiptAsync(
-                    request.SubmitterEmail,
-                    request.SubmitterName,
-                    request.Title);
-            }
+                await _emailService.SendSubmissionReceiptAsync(request.SubmitterEmail, request.SubmitterName, request.Title);
 
-            foreach (var author in request.Authors)
-            {
-                if (!string.Equals(author.Email, request.SubmitterEmail, StringComparison.OrdinalIgnoreCase))
-                {
-                    string fullName = $"{author.FirstName} {author.LastName}";
-                    await _emailService.SendSubmissionReceiptAsync(
-                        author.Email,
-                        fullName,
-                        request.Title);
-                }
-            }
+            // ORGANİZATÖRE MAİL GÖNDERİMİ
+            if (!string.IsNullOrEmpty(request.OrganizerEmail))
+                await _emailService.SendSubmissionReceiptAsync(request.OrganizerEmail, "Organizer", $"[NEW SUBMISSION] {request.Title}");
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[MAIL NOTIFY ERROR] {ex.Message}");
-        }
+        catch { /* log error */ }
 
         return submission.Id;
     }

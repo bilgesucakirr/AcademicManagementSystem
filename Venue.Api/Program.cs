@@ -8,6 +8,10 @@ using Venue.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<Venue.Api.Services.IFileService, Venue.Api.Services.FileService>();
+
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -43,6 +47,9 @@ builder.Services.AddDbContext<VenueDbContext>(options =>
 
 builder.Services.AddScoped<IVenueDbContext>(provider =>
     provider.GetRequiredService<VenueDbContext>());
+
+
+
 
 var key = Encoding.ASCII.GetBytes("BuCokGizliVeUzunBirAnahtarOlmal?_EnAz32Karakter_2025_Jarvis");
 builder.Services.AddAuthentication(options =>
@@ -86,6 +93,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

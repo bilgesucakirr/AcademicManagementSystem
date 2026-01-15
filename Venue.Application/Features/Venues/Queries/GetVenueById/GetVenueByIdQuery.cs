@@ -18,27 +18,26 @@ public class GetVenueByIdQueryHandler : IRequestHandler<GetVenueByIdQuery, Venue
     public async Task<VenueDetailDto> Handle(GetVenueByIdQuery request, CancellationToken cancellationToken)
     {
         var venue = await _context.Venues
-            .Include(v => v.Editions)
-                .ThenInclude(e => e.CallForPapers)
-                    .ThenInclude(c => c.Tracks)
+            .Include(v => v.Editions).ThenInclude(e => e.CallForPapers).ThenInclude(c => c.Tracks)
             .FirstOrDefaultAsync(v => v.Id == request.Id, cancellationToken);
 
         if (venue == null) return null!;
 
-        var activeEdition = venue.Editions.FirstOrDefault(e => e.IsActive);
+        var activeEdition = venue.Editions.OrderByDescending(e => e.StartDate).FirstOrDefault();
         var activeCfp = activeEdition?.CallForPapers.FirstOrDefault();
 
         return new VenueDetailDto
         {
             Id = venue.Id,
             Name = venue.Name,
+            OrganizerEmail = venue.OrganizerEmail,
+
+            // KRİTİK SATIR: Veritabanındaki URL'i DTO'ya aktarıyoruz
+            ReviewFormUrl = venue.ReviewFormUrl,
+
             ActiveEditionId = activeEdition?.Id ?? Guid.Empty,
             ActiveCfpId = activeCfp?.Id ?? Guid.Empty,
-            Tracks = activeCfp?.Tracks.Select(t => new TrackDto
-            {
-                Id = t.Id,
-                Name = t.Name
-            }).ToList() ?? new()
+            Tracks = activeCfp?.Tracks.Select(t => new TrackDto { Id = t.Id, Name = t.Name }).ToList() ?? new()
         };
     }
 }

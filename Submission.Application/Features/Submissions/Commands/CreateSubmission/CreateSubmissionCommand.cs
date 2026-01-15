@@ -25,4 +25,6 @@ public record CreateSubmissionCommand : IRequest<Guid>
     public Guid SubmitterId { get; set; }
     public string SubmitterEmail { get; set; } = string.Empty;
     public string SubmitterName { get; set; } = string.Empty;
+
+   public string? OrganizerEmail { get; set; }
 }

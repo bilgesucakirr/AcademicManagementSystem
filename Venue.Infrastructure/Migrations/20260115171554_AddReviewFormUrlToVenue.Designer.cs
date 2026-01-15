@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Venue.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Venue.Infrastructure.Persistence;
 namespace Venue.Infrastructure.Migrations
 {
     [DbContext(typeof(VenueDbContext))]
-    partial class VenueDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260115171554_AddReviewFormUrlToVenue")]
+    partial class AddReviewFormUrlToVenue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -112,9 +115,6 @@ namespace Venue.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("OrganizerEmail")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ReviewFormUrl")
                         .HasColumnType("nvarchar(max)");

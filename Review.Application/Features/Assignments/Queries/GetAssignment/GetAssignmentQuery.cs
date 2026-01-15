@@ -34,6 +34,7 @@ public class GetAssignmentQueryHandler : IRequestHandler<GetAssignmentQuery, Rev
         {
             AssignmentId = assignment.Id,
             SubmissionId = assignment.SubmissionId,
+          
             Status = assignment.Status.ToString()
         };
     }

@@ -29,6 +29,7 @@ public class GetSubmissionDetailQueryHandler : IRequestHandler<GetSubmissionDeta
         return new SubmissionDetailDto
         {
             Id = s.Id,
+            VenueId = s.VenueId,
             ReferenceNumber = s.ReferenceNumber ?? "DRAFT",
             Title = s.Title,
             Abstract = s.Abstract,

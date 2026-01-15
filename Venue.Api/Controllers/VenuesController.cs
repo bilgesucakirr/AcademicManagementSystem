@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Venue.Api.Services; // FileService namespace
 using Venue.Application.Features.Venues.Commands.CreateVenue;
 using Venue.Application.Features.Venues.Queries.GetAllVenues;
 using Venue.Application.Features.Venues.Queries.GetVenueById;
@@ -12,10 +13,12 @@ namespace Venue.Api.Controllers;
 public class VenuesController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly IFileService _fileService; // Servis Inject Edildi
 
-    public VenuesController(ISender mediator)
+    public VenuesController(ISender mediator, IFileService fileService)
     {
         _mediator = mediator;
+        _fileService = fileService;
     }
 
     [HttpGet]
@@ -38,5 +41,17 @@ public class VenuesController : ControllerBase
     {
         var id = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id }, id);
+    }
+
+    [HttpPost("upload-form")]
+    [Authorize(Roles = "Admin,EditorInChief")]
+    public async Task<IActionResult> UploadForm(IFormFile file)
+    {
+        try
+        {
+            var url = await _fileService.SaveFileAsync(file);
+            return Ok(new { Url = url });
+        }
+        catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
     }
 }
