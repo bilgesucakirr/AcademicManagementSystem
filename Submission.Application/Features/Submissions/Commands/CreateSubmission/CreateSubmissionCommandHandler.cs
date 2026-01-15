@@ -23,6 +23,16 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
 
     public async Task<Guid> Handle(CreateSubmissionCommand request, CancellationToken cancellationToken)
     {
+        // 1. Gereksinim: Dosya Formatı Kontrolü
+        if (request.ManuscriptFile != null)
+        {
+            var ext = Path.GetExtension(request.ManuscriptFile.FileName).ToLower();
+            if (ext != ".docx")
+            {
+                throw new InvalidOperationException("System policy requires manuscripts to be in .docx (Word) format only.");
+            }
+        }
+
         var submissionId = Guid.NewGuid();
 
         var submission = new Domain.Entities.Submission
@@ -80,7 +90,6 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
 
         try
         {
-            // 1. ADIM: İşlemi başlatan kişiye (Bilgesu Çakır) mail gönder
             if (!string.IsNullOrEmpty(request.SubmitterEmail))
             {
                 await _emailService.SendSubmissionReceiptAsync(
@@ -89,15 +98,11 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
                     request.Title);
             }
 
-            // 2. ADIM: Formdaki yazar listesindeki her bir yazara mail gönder
             foreach (var author in request.Authors)
             {
-                // Eğer bu yazarın maili, işlemi yapan kişinin mailinden farklıysa mail at
                 if (!string.Equals(author.Email, request.SubmitterEmail, StringComparison.OrdinalIgnoreCase))
                 {
-                    // DÜZELTME: request.SubmitterName yerine author.FirstName + author.LastName kullanıyoruz
                     string fullName = $"{author.FirstName} {author.LastName}";
-
                     await _emailService.SendSubmissionReceiptAsync(
                         author.Email,
                         fullName,

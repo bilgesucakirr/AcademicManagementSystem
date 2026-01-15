@@ -7,4 +7,5 @@ public class SubmissionListDto
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public string SubmitterName { get; set; } = string.Empty;
+    public Guid VenueId { get; set; }
 }

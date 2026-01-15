@@ -5,7 +5,10 @@ public enum SubmissionStatus
     Draft,
     Submitted,
     UnderReview,
-    RevisionRequested,
+    MinorRevisionRequired, 
+    MajorRevisionRequired, 
+    CameraReadyRequested,  
+    CameraReadySubmitted,  
     Accepted,
     Rejected,
     Withdrawn

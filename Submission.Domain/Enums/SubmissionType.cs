@@ -5,5 +5,6 @@ public enum SubmissionType
     ResearchPaper,
     ReviewPaper,
     ShortPaper,
-    CaseStudy
+    CaseStudy,
+    AbstractPaper
 }

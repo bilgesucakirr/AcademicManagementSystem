@@ -12,15 +12,17 @@ public class Review
     public string? CommentsToEditor { get; private set; }
     public string? AttachmentUrl { get; private set; }
 
-    // YENİ: Editör Kararı Önerisi
-    public string Recommendation { get; private set; } // Accept, MinorRevision, MajorRevision, Reject
+    // --- YENİ EKLENEN ALAN ---
+    public string Recommendation { get; private set; } = string.Empty;
+    // -------------------------
 
     public DateTime SubmittedAt { get; private set; }
 
     public ReviewAssignment Assignment { get; private set; } = null!;
 
-    private Review() { }
+    private Review() { } // EF Core için boş constructor
 
+    // Constructor güncellendi: recommendation parametresi eklendi
     public Review(
         Guid assignmentId,
         decimal overallScore,
@@ -36,7 +38,7 @@ public class Review
         CommentsToAuthor = commentsToAuthor;
         CommentsToEditor = commentsToEditor;
         AttachmentUrl = attachmentUrl;
-        Recommendation = recommendation;
+        Recommendation = recommendation; // Değer ataması
         SubmittedAt = DateTime.UtcNow;
     }
 }

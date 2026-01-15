@@ -24,7 +24,8 @@ public class GetMySubmissionsQueryHandler : IRequestHandler<GetMySubmissionsQuer
                 Id = s.Id,
                 Title = s.Title,
                 Status = s.Status.ToString(),
-                CreatedAt = s.CreatedAt
+                CreatedAt = s.CreatedAt,
+                VenueId = s.VenueId 
             })
             .ToListAsync(cancellationToken);
     }

@@ -32,6 +32,12 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
         string? attachmentUrl = null;
         if (request.ReviewFile != null)
         {
+            var ext = Path.GetExtension(request.ReviewFile.FileName).ToLower();
+            if (ext != ".docx")
+            {
+                throw new InvalidOperationException("Review files must be in .docx format.");
+            }
+
             attachmentUrl = await _fileService.SaveReviewFileAsync(request.ReviewFile);
         }
 
@@ -42,7 +48,7 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
             request.CommentsToAuthor,
             request.CommentsToEditor,
             attachmentUrl,
-            request.Recommendation
+            request.Recommendation 
         );
 
         assignment.MarkAsSubmitted();

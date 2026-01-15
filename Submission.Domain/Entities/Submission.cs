@@ -13,9 +13,13 @@ public class Submission
     public string Title { get; set; } = string.Empty;
     public string Abstract { get; set; } = string.Empty;
     public string Keywords { get; set; } = string.Empty;
+
+    // AbstractPaper seçeneği bu Enum içinde güncellendi
     public SubmissionType Type { get; set; }
 
     public string? ReferenceNumber { get; set; }
+
+    // MajorRevision/MinorRevision durumları bu Enum içinde güncellendi
     public SubmissionStatus Status { get; set; } = SubmissionStatus.Draft;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

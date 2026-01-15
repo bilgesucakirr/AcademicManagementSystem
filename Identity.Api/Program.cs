@@ -8,6 +8,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- CORS ---
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorUI",
@@ -19,9 +20,11 @@ builder.Services.AddCors(options =>
         });
 });
 
+// --- DB Context ---
 builder.Services.AddDbContext<AppIdentityDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// --- Identity ---
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = false;
@@ -34,6 +37,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppIdentityDbContext>()
 .AddDefaultTokenProviders();
 
+// --- JWT Auth ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]!);
 
@@ -55,12 +59,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// --- Services ---
 builder.Services.AddScoped<Identity.Api.Services.IInvitationService, Identity.Api.Services.InvitationService>();
 builder.Services.AddScoped<Identity.Api.Services.IAuthService, Identity.Api.Services.AuthService>();
+builder.Services.AddScoped<Identity.Api.Services.IFileService, Identity.Api.Services.FileService>(); 
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// HttpContextAccessor Dosya servisi için gerekli
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -77,6 +85,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); 
 app.UseCors("AllowBlazorUI");
 
 app.UseAuthentication();
