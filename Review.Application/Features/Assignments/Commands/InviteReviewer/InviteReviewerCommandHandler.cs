@@ -9,11 +9,13 @@ public class InviteReviewerCommandHandler : IRequestHandler<InviteReviewerComman
 {
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly ISubmissionIntegrationService _integrationService;
 
-    public InviteReviewerCommandHandler(IApplicationDbContext context, IEmailService emailService)
+    public InviteReviewerCommandHandler(IApplicationDbContext context, IEmailService emailService, ISubmissionIntegrationService integrationService)
     {
         _context = context;
         _emailService = emailService;
+        _integrationService = integrationService;
     }
 
     public async Task<Guid> Handle(InviteReviewerCommand request, CancellationToken cancellationToken)
@@ -34,11 +36,14 @@ public class InviteReviewerCommandHandler : IRequestHandler<InviteReviewerComman
         var assignment = ReviewAssignment.CreateInvitation(
             request.SubmissionId,
             request.ReviewerUserId,
+            request.ReviewerEmail,
             dueAt
         );
 
         await _context.ReviewAssignments.AddAsync(assignment, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _integrationService.UpdateStatsAsync(request.SubmissionId, 1, 0);
 
         await _emailService.SendInvitationEmailAsync(request.ReviewerEmail, assignment.Id.ToString(), request.SubmissionTitle);
 

@@ -6,7 +6,6 @@ namespace Review.Infrastructure.Services;
 public class SubmissionIntegrationService : ISubmissionIntegrationService
 {
     private readonly HttpClient _httpClient;
-
     public SubmissionIntegrationService(HttpClient httpClient)
     {
         _httpClient = httpClient;
@@ -16,12 +15,12 @@ public class SubmissionIntegrationService : ISubmissionIntegrationService
     public async Task UpdateStatsAsync(Guid submissionId, int assignedDelta, int completedDelta)
     {
         var payload = new { AssignedDelta = assignedDelta, CompletedDelta = completedDelta };
-        try
-        {
-            await _httpClient.PostAsJsonAsync($"api/integration/submissions/{submissionId}/review-stats", payload);
-        }
-        catch
-        {
-        }
+        await _httpClient.PostAsJsonAsync($"api/integration/submissions/{submissionId}/review-stats", payload);
+    }
+
+    public async Task NotifyRecommendationAsync(Guid submissionId, string recommendation)
+    {
+        var payload = new { Recommendation = recommendation };
+        await _httpClient.PostAsJsonAsync($"api/integration/submissions/{submissionId}/reviewer-decision", payload);
     }
 }

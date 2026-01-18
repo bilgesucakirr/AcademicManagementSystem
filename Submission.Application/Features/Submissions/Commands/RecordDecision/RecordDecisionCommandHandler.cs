@@ -1,49 +1,56 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Submission.Application.Contracts;
-using Submission.Domain.Entities;
 using Submission.Domain.Enums;
+using Submission.Domain.Entities;
 
 namespace Submission.Application.Features.Submissions.Commands.RecordDecision;
 
 public class RecordDecisionCommandHandler : IRequestHandler<RecordDecisionCommand, Unit>
 {
     private readonly ISubmissionDbContext _context;
-    private readonly IConfiguration _config;
+    private readonly IEmailService _emailService;
 
-    public RecordDecisionCommandHandler(ISubmissionDbContext context, IConfiguration config)
+    public RecordDecisionCommandHandler(ISubmissionDbContext context, IEmailService emailService)
     {
         _context = context;
-        _config = config;
+        _emailService = emailService;
     }
 
     public async Task<Unit> Handle(RecordDecisionCommand request, CancellationToken cancellationToken)
     {
-        var submission = await _context.Submissions
+        var sub = await _context.Submissions
+            .Include(s => s.Authors)
             .FirstOrDefaultAsync(s => s.Id == request.SubmissionId, cancellationToken);
 
-        if (submission == null)
-            throw new KeyNotFoundException("Submission not found.");
+        if (sub == null) throw new KeyNotFoundException("Submission not found.");
 
-        int minReviews = _config.GetValue<int>("SubmissionSettings:MinReviewsRequired");
+        var author = sub.Authors.FirstOrDefault(a => a.IsCorresponding) ?? sub.Authors.First();
 
-        if (submission.ReviewsCompletedCount < minReviews && request.Decision != SubmissionStatus.Rejected)
+        if (request.Decision == SubmissionStatus.Accepted)
         {
-            throw new InvalidOperationException($"Cannot record decision. Requires {minReviews} completed reviews. Current: {submission.ReviewsCompletedCount}");
+            sub.Status = SubmissionStatus.CameraReadyRequested;
+            await _emailService.SendDecisionEmailAsync(author.Email, author.FirstName, sub.Title, "Accepted (Camera Ready Required)", request.DecisionLetter);
         }
-
-        submission.Status = request.Decision;
+        else if (request.Decision == SubmissionStatus.Rejected)
+        {
+            sub.Status = SubmissionStatus.Rejected;
+            await _emailService.SendDecisionEmailAsync(author.Email, author.FirstName, sub.Title, "Rejected", request.DecisionLetter);
+        }
+        else
+        {
+            sub.Status = request.Decision;
+        }
 
         var auditEntry = new AuditEvent
         {
             ActorId = "EditorInChief",
-            Action = "DecisionRecorded",
+            Action = "FinalDecisionRecorded",
             EntityType = "Submission",
-            EntityId = submission.Id,
-            Metadata = $"Decision: {request.Decision}"
+            EntityId = sub.Id,
+            Metadata = $"Final Decision: {request.Decision}. Letter: {request.DecisionLetter}"
         };
-        await _context.AuditEvents.AddAsync(auditEntry, cancellationToken);
+        _context.AuditEvents.Add(auditEntry);
 
         await _context.SaveChangesAsync(cancellationToken);
         return Unit.Value;

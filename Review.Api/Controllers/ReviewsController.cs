@@ -55,4 +55,10 @@ public class ReviewsController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("submission/{submissionId}/anonymous")]
+    public async Task<IActionResult> GetAnonymousReviews(Guid submissionId)
+    {
+        return Ok(await _mediator.Send(new Review.Application.Features.Reviews.Queries.GetSubmissionReviews.GetAnonymousReviewsQuery(submissionId)));
+    }
 }

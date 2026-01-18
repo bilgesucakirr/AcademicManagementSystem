@@ -27,6 +27,7 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
             Id = submissionId,
             VenueId = request.VenueId,
             VenueEditionId = request.VenueEditionId,
+
             CallForPapersId = request.CallForPapersId,
             TrackId = request.TrackId,
             Title = request.Title,
@@ -34,6 +35,7 @@ public class CreateSubmissionCommandHandler : IRequestHandler<CreateSubmissionCo
             Keywords = request.Keywords,
             Type = request.Type,
             SubmitterUserId = request.SubmitterId,
+            OrganizerEmail = request.OrganizerEmail,
             Status = SubmissionStatus.Draft,
             CreatedAt = DateTime.UtcNow,
             IsOriginal = request.IsOriginal,

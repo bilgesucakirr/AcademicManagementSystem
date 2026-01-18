@@ -23,21 +23,20 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
         var assignment = await _context.ReviewAssignments
             .FirstOrDefaultAsync(ra => ra.Id == request.AssignmentId, cancellationToken);
 
-        if (assignment is null)
-            throw new KeyNotFoundException($"Assignment {request.AssignmentId} not found.");
+        if (assignment == null || assignment.Status != ReviewAssignmentStatus.Accepted)
+            throw new InvalidOperationException("Invalid assignment state.");
 
-        if (assignment.Status != ReviewAssignmentStatus.Accepted)
-            throw new InvalidOperationException("Cannot submit review.");
+        var existingReview = await _context.Reviews
+            .FirstOrDefaultAsync(r => r.AssignmentId == request.AssignmentId, cancellationToken);
+
+        if (existingReview != null)
+        {
+            _context.Reviews.Remove(existingReview);
+        }
 
         string? attachmentUrl = null;
         if (request.ReviewFile != null)
         {
-            var ext = Path.GetExtension(request.ReviewFile.FileName).ToLower();
-            if (ext != ".docx")
-            {
-                throw new InvalidOperationException("Review files must be in .docx format.");
-            }
-
             attachmentUrl = await _fileService.SaveReviewFileAsync(request.ReviewFile);
         }
 
@@ -48,15 +47,15 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, U
             request.CommentsToAuthor,
             request.CommentsToEditor,
             attachmentUrl,
-            request.Recommendation 
+            request.Recommendation
         );
 
         assignment.MarkAsSubmitted();
-
         await _context.Reviews.AddAsync(review, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         await _integrationService.UpdateStatsAsync(assignment.SubmissionId, 0, 1);
+        await _integrationService.NotifyRecommendationAsync(assignment.SubmissionId, request.Recommendation);
 
         return Unit.Value;
     }

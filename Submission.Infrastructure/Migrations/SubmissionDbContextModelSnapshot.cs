@@ -134,6 +134,9 @@ namespace Submission.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("OrganizerEmail")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ReferenceNumber")
                         .HasColumnType("nvarchar(450)");
 

@@ -1,11 +1,14 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Review.Application.Features.Assignments.Commands.AcceptInvitation;
 using Review.Application.Features.Assignments.Commands.DeclineInvitation;
 using Review.Application.Features.Assignments.Commands.InviteReviewer;
 // Bu satırı eklemek zorundasın, yoksa GetAssignmentQuery'yi tanımaz:
 using Review.Application.Features.Assignments.Queries.GetAssignment;
+using Review.Domain.Entities;
+using Review.Domain.Enums;
 
 namespace Review.Api.Controllers;
 
@@ -57,4 +60,13 @@ public class AssignmentsController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPost("submission/{submissionId}/re-activate")]
+    [AllowAnonymous] 
+    public async Task<IActionResult> ReActivateAssignment(Guid submissionId)
+    {
+        await _mediator.Send(new Review.Application.Features.Assignments.Commands.ReActivateAssignments.ReActivateAssignmentsCommand(submissionId));
+        return Ok();
+    }
+
 }

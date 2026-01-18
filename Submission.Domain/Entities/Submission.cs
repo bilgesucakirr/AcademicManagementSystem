@@ -10,6 +10,8 @@ public class Submission
     public Guid CallForPapersId { get; set; }
     public Guid? TrackId { get; set; }
 
+    public string? OrganizerEmail { get; set; }
+
     public string Title { get; set; } = string.Empty;
     public string Abstract { get; set; } = string.Empty;
     public string Keywords { get; set; } = string.Empty;

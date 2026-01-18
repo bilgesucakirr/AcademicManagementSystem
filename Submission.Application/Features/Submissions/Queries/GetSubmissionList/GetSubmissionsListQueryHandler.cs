@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Submission.Application.Contracts;
 using Submission.Application.DTOs;
-using Submission.Domain.Enums;
 
 namespace Submission.Application.Features.Submissions.Queries.GetSubmissionsList;
 
@@ -19,24 +18,16 @@ public class GetSubmissionsListQueryHandler : IRequestHandler<GetSubmissionsList
     {
         var query = _context.Submissions.AsQueryable();
 
-        if (request.UserRole == "TrackChair")
-        {
-            if (request.AssignedTrackId.HasValue)
-            {
-                query = query.Where(s => s.TrackId == request.AssignedTrackId.Value);
-            }
-            else
-            {
-                return new List<SubmissionListDto>();
-            }
-        }
-        else if (request.UserRole == "EditorInChief" || request.UserRole == "Admin")
-        {
+        query = query.Where(s => s.OrganizerEmail == request.EditorEmail);
 
-        }
-        else
+        if (request.VenueId.HasValue && request.VenueId != Guid.Empty)
         {
-            return new List<SubmissionListDto>();
+            query = query.Where(s => s.VenueId == request.VenueId.Value);
+        }
+
+        if (request.UserRole == "TrackChair" && request.AssignedTrackId.HasValue)
+        {
+            query = query.Where(s => s.TrackId == request.AssignedTrackId.Value);
         }
 
         return await query
@@ -44,10 +35,13 @@ public class GetSubmissionsListQueryHandler : IRequestHandler<GetSubmissionsList
             .Select(s => new SubmissionListDto
             {
                 Id = s.Id,
+                ReferenceNumber = s.ReferenceNumber,
                 Title = s.Title,
                 Status = s.Status.ToString(),
                 CreatedAt = s.CreatedAt,
-                SubmitterName = "Unknown"
+                VenueId = s.VenueId,
+                ReviewersAssignedCount = s.ReviewersAssignedCount,
+                ReviewsCompletedCount = s.ReviewsCompletedCount
             })
             .ToListAsync(cancellationToken);
     }

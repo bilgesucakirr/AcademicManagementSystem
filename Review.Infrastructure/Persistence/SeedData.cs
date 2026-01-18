@@ -17,8 +17,10 @@ public static class SeedData
             return;
         }
 
-        var testAssignment = ReviewAssignment.CreateInvitation(submissionId: DummySubmissionId,
+        var testAssignment = ReviewAssignment.CreateInvitation(
+            submissionId: DummySubmissionId,
             reviewerUserId: Guid.NewGuid(),
+            reviewerEmail: "test-reviewer@example.com",
             dueAt: DateTime.UtcNow.AddDays(10)
         );
 

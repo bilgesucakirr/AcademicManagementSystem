@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Venue.Api.Services; // FileService namespace
 using Venue.Application.Features.Venues.Commands.CreateVenue;
 using Venue.Application.Features.Venues.Queries.GetAllVenues;
@@ -53,5 +54,16 @@ public class VenuesController : ControllerBase
             return Ok(new { Url = url });
         }
         catch (Exception ex) { return BadRequest(new { Message = ex.Message }); }
+    }
+
+    [HttpGet("managed")]
+    [Authorize(Roles = "Admin,EditorInChief")]
+    public async Task<IActionResult> GetMyManagedVenues()
+    {
+        var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(userEmail)) return Unauthorized();
+
+        var result = await _mediator.Send(new Venue.Application.Features.Venues.Queries.GetManagedVenues.GetManagedVenuesQuery(userEmail));
+        return Ok(result);
     }
 }

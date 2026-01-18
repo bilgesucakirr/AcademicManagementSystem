@@ -86,6 +86,10 @@ namespace Review.Infrastructure.Migrations
                     b.Property<DateTime>("InvitedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ReviewerEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("ReviewerUserId")
                         .HasColumnType("uniqueidentifier");
 

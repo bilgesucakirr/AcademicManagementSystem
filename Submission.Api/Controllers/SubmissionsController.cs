@@ -6,6 +6,7 @@ using Submission.Application.Features.Submissions.Commands.FinalizeSubmission;
 using Submission.Application.Features.Submissions.Commands.RecordDecision;
 using Submission.Application.Features.Submissions.Queries.GetMySubmissions;
 using Submission.Application.Features.Submissions.Queries.GetSubmissionsList;
+using Submission.Application.Features.Submissions.Commands.UploadRevisedPaper;
 using System.Security.Claims;
 
 namespace Submission.Api.Controllers;
@@ -56,10 +57,11 @@ public class SubmissionsController : ControllerBase
 
     [HttpGet("all")]
     [Authorize(Roles = "Admin, EditorInChief, TrackChair")]
-    public async Task<IActionResult> GetAllSubmissions()
+    public async Task<IActionResult> GetAllSubmissions([FromQuery] Guid? venueId)
     {
         var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
         var trackIdClaim = User.FindFirst("AssignedTrackId")?.Value;
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
 
         Guid? trackId = null;
         if (!string.IsNullOrEmpty(trackIdClaim) && Guid.TryParse(trackIdClaim, out var parsedGuid))
@@ -67,9 +69,13 @@ public class SubmissionsController : ControllerBase
             trackId = parsedGuid;
         }
 
-        var query = new GetSubmissionsListQuery(roleClaim!, trackId);
-        var result = await _mediator.Send(query);
+        var query = new GetSubmissionsListQuery(
+            roleClaim!,
+            trackId,
+            venueId,
+            userEmail ?? string.Empty);
 
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
 
@@ -80,11 +86,6 @@ public class SubmissionsController : ControllerBase
         var result = await _mediator.Send(query);
 
         if (result == null) return NotFound();
-
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-
-       
 
         return Ok(result);
     }
@@ -108,5 +109,19 @@ public class SubmissionsController : ControllerBase
 
         var refNo = await _mediator.Send(new FinalizeSubmissionCommand(id, userId));
         return Ok(new { ReferenceNumber = refNo });
+    }
+
+    [HttpPost("{id}/upload-revision")]
+    [Authorize(Roles = "Author")]
+    public async Task<IActionResult> UploadRevision(Guid id, IFormFile file, [FromQuery] string type)
+    {
+        var fileType = type == "CameraReady"
+            ? Submission.Domain.Enums.FileType.CameraReady
+            : Submission.Domain.Enums.FileType.MainManuscript;
+
+        var command = new UploadRevisedPaperCommand(id, file, fileType);
+        await _mediator.Send(command);
+
+        return Ok(new { Message = "File uploaded successfully." });
     }
 }
